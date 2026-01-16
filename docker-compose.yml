@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  gru:
+    build: .
+    container_name: gru
+    restart: unless-stopped
+    volumes:
+      - gru_data:/data
+      - ./workspace:/workspace
+      - ./mcp_servers.json:/app/mcp_servers.json:ro
+    environment:
+      - GRU_TELEGRAM_TOKEN=${GRU_TELEGRAM_TOKEN}
+      - GRU_ADMIN_IDS=${GRU_ADMIN_IDS}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GRU_MASTER_PASSWORD=${GRU_MASTER_PASSWORD:-}
+      - GRU_DEFAULT_MODEL=${GRU_DEFAULT_MODEL:-claude-sonnet-4-20250514}
+      - GRU_MAX_TOKENS=${GRU_MAX_TOKENS:-8192}
+      - GRU_DEFAULT_TIMEOUT=${GRU_DEFAULT_TIMEOUT:-300}
+      - GRU_MAX_AGENTS=${GRU_MAX_AGENTS:-10}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import gru; print('ok')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  gru_data:
