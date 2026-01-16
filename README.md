@@ -4,9 +4,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
-Self-hosted AI agent orchestration service controlled via Telegram or Discord.
+Self-hosted AI agent orchestration service controlled via Telegram, Discord, or Slack.
 
-Gru lets you spawn, manage, and interact with Claude-powered AI agents from your phone. Agents can execute bash commands, read/write files, and work autonomously on tasks. Think of it as having a coding assistant you can text from anywhere.
+Gru lets you spawn, manage, and interact with Claude-powered AI agents from your phone. Agents can execute bash commands, read/write files, and work autonomously on tasks. Think of it as having a coding assistant you can message from anywhere.
 
 ## Quick Start
 
@@ -14,7 +14,7 @@ Gru lets you spawn, manage, and interact with Claude-powered AI agents from your
 2. Clone and install Gru
 3. Create your `.env` file with your keys
 4. Run `PYTHONPATH=src python -m gru.main`
-5. Open Telegram or Discord and message your bot
+5. Open Telegram, Discord, or Slack and message your bot
 
 That's it. You can now spawn AI agents from your phone or desktop.
 
@@ -25,11 +25,11 @@ That's it. You can now spawn AI agents from your phone or desktop.
 You'll need these things before starting:
 
 1. **Python 3.10 or higher**
-2. **A bot token** (Telegram and/or Discord)
+2. **A bot token** (Telegram, Discord, and/or Slack)
 3. **Your user ID** (for the platform(s) you're using)
 4. **An Anthropic API Key**
 
-You can use Telegram, Discord, or both simultaneously. Don't worry if you don't have these yet. Follow the steps below.
+You can use Telegram, Discord, Slack, or any combination. Don't worry if you don't have these yet. Follow the steps below.
 
 ---
 
@@ -151,9 +151,80 @@ Gru only responds to authorized users. You need your Discord user ID (a number).
 
 ---
 
+## Slack Setup
+
+### Step 6: Create a Slack App
+
+You need to create an app in the Slack API dashboard. This is free.
+
+1. Go to [api.slack.com/apps](https://api.slack.com/apps)
+2. Click **Create New App**
+3. Choose **From scratch**
+4. Give it a name (e.g., "Gru") and select your workspace
+5. Click **Create App**
+
+**Enable Socket Mode (required):**
+
+1. Go to **Socket Mode** in the left sidebar
+2. Toggle **Enable Socket Mode** to ON
+3. You'll be prompted to create an App-Level Token
+4. Name it (e.g., "gru-socket") and add the `connections:write` scope
+5. Click **Generate**
+6. Copy the token. It starts with `xapp-`:
+   ```
+   xapp-1-xxxxxxxxxxxx
+   ```
+7. **Save this token.** This is your `GRU_SLACK_APP_TOKEN`.
+
+**Add Bot Permissions:**
+
+1. Go to **OAuth & Permissions** in the left sidebar
+2. Scroll to **Scopes** > **Bot Token Scopes**
+3. Add these scopes:
+   - `chat:write` - Send messages
+   - `commands` - Handle slash commands
+   - `im:history` - Read DM history
+   - `im:write` - Send DMs
+
+**Create the Slash Command:**
+
+1. Go to **Slash Commands** in the left sidebar
+2. Click **Create New Command**
+3. Set Command to `/gru`
+4. Set Description to "Gru agent orchestrator"
+5. Click **Save**
+
+**Install to Workspace:**
+
+1. Go to **Install App** in the left sidebar
+2. Click **Install to Workspace**
+3. Authorize the app
+4. Copy the **Bot User OAuth Token**. It starts with `xoxb-`:
+   ```
+   xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx
+   ```
+5. **Save this token.** This is your `GRU_SLACK_BOT_TOKEN`.
+
+---
+
+### Step 7: Get Your Slack User ID
+
+Gru only responds to authorized users. You need your Slack user ID.
+
+1. Open Slack
+2. Click on your profile picture (bottom left)
+3. Click **Profile**
+4. Click the **three dots** menu
+5. Click **Copy member ID**
+6. **Save this ID.** It looks like `U01ABC123DE`.
+
+**Want to add multiple admins?** You can add multiple user IDs separated by commas (e.g., `U01ABC123DE,U02XYZ456FG`).
+
+---
+
 ## API Key
 
-### Step 6: Get an Anthropic API Key
+### Step 8: Get an Anthropic API Key
 
 Gru uses Claude (made by Anthropic) as its AI brain. You need an API key.
 
@@ -239,14 +310,19 @@ Then open `.env` in any text editor and fill in your values.
 # Required - Anthropic API key
 ANTHROPIC_API_KEY=paste_your_anthropic_key_here
 
-# Telegram (optional if using Discord)
+# Telegram (optional)
 GRU_TELEGRAM_TOKEN=paste_your_telegram_bot_token_here
 GRU_ADMIN_IDS=paste_your_telegram_user_id_here
 
-# Discord (optional if using Telegram)
+# Discord (optional)
 GRU_DISCORD_TOKEN=paste_your_discord_bot_token_here
 GRU_DISCORD_ADMIN_IDS=paste_your_discord_user_id_here
 GRU_DISCORD_GUILD_ID=optional_server_id_to_restrict_to
+
+# Slack (optional)
+GRU_SLACK_BOT_TOKEN=xoxb-your-bot-token
+GRU_SLACK_APP_TOKEN=xapp-your-app-token
+GRU_SLACK_ADMIN_IDS=U01ABC123DE
 
 # Optional - defaults work fine for most users
 GRU_MASTER_PASSWORD=pick_any_password_for_encrypting_secrets
@@ -274,7 +350,16 @@ GRU_DISCORD_TOKEN=your-discord-bot-token
 GRU_DISCORD_ADMIN_IDS=123456789012345678
 ```
 
-**Example with both:**
+**Example with Slack only:**
+
+```bash
+ANTHROPIC_API_KEY=sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+GRU_SLACK_BOT_TOKEN=xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx
+GRU_SLACK_APP_TOKEN=xapp-1-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx
+GRU_SLACK_ADMIN_IDS=U01ABC123DE
+```
+
+**Example with multiple platforms:**
 
 ```bash
 ANTHROPIC_API_KEY=sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -282,6 +367,9 @@ GRU_TELEGRAM_TOKEN=1234567890:ABCdefGHIjklMNOpqrsTUVwxyz
 GRU_ADMIN_IDS=123456789
 GRU_DISCORD_TOKEN=your-discord-bot-token
 GRU_DISCORD_ADMIN_IDS=123456789012345678
+GRU_SLACK_BOT_TOKEN=xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx
+GRU_SLACK_APP_TOKEN=xapp-1-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx
+GRU_SLACK_ADMIN_IDS=U01ABC123DE
 ```
 
 ### Configuration Options Explained
@@ -294,6 +382,9 @@ GRU_DISCORD_ADMIN_IDS=123456789012345678
 | `GRU_DISCORD_TOKEN` | If using Discord | Your bot token from Discord Developer Portal |
 | `GRU_DISCORD_ADMIN_IDS` | If using Discord | Your Discord user ID(s), comma-separated |
 | `GRU_DISCORD_GUILD_ID` | No | Restrict bot to a specific Discord server |
+| `GRU_SLACK_BOT_TOKEN` | If using Slack | Your Bot User OAuth Token (`xoxb-...`) |
+| `GRU_SLACK_APP_TOKEN` | If using Slack | Your App-Level Token for Socket Mode (`xapp-...`) |
+| `GRU_SLACK_ADMIN_IDS` | If using Slack | Your Slack user ID(s), comma-separated |
 | `GRU_MASTER_PASSWORD` | No | Password for encrypting stored secrets |
 | `GRU_DATA_DIR` | No | Where Gru stores its database (default: `~/.gru`) |
 | `GRU_WORKDIR` | No | Default directory for agents to work in (default: `~/gru-workspace`) |
@@ -302,7 +393,7 @@ GRU_DISCORD_ADMIN_IDS=123456789012345678
 | `GRU_DEFAULT_TIMEOUT` | No | Agent timeout in seconds (default: `300`) |
 | `GRU_MAX_AGENTS` | No | Max concurrent agents (default: `10`) |
 
-**Note:** You must configure at least one bot interface (Telegram or Discord). You can use both simultaneously.
+**Note:** You must configure at least one bot interface (Telegram, Discord, or Slack). You can use multiple simultaneously.
 
 ---
 
@@ -348,6 +439,7 @@ Gru server started
 Data directory: /home/you/.gru
 Telegram admin IDs: [123456789]
 Discord admin IDs: [123456789012345678]
+Slack admin IDs: ['U01ABC123DE']
 ```
 
 If you have MCP servers configured (optional), you'll also see:
@@ -357,7 +449,7 @@ MCP server 'filesystem' started with 14 tools
 Started 1 MCP server(s)
 ```
 
-**Now open Telegram or Discord and send a message to your bot!**
+**Now open Telegram, Discord, or Slack and send a message to your bot!**
 
 ---
 
@@ -396,7 +488,7 @@ Gru understands what you want and either spawns an agent or answers directly.
 
 ### Commands Reference
 
-Commands work the same on both Telegram and Discord. On Telegram, use `/gru <command>`. On Discord, use slash commands `/gru <command>`.
+Commands work the same across all platforms. On Telegram, use `/gru <command>`. On Discord and Slack, use the `/gru` slash command.
 
 #### Telegram Commands
 
@@ -500,6 +592,59 @@ Discord uses slash commands. Type `/gru` and Discord will show available subcomm
 - Multi-option approvals show numbered option buttons
 - Natural language works in any channel the bot can see
 
+#### Slack Commands
+
+Use `/gru <command>` in any channel or DM:
+
+**Spawning Agents:**
+```
+/gru spawn <task>
+/gru spawn <task> --unsupervised
+/gru spawn <task> --oneshot
+/gru spawn <task> --workdir /path --priority high
+```
+
+**Managing Agents:**
+```
+/gru status
+/gru status <agent_id>
+/gru list
+/gru list running
+/gru pause <agent_id>
+/gru resume <agent_id>
+/gru terminate <agent_id>
+/gru nudge <agent_id> <message>
+/gru logs <agent_id>
+```
+
+**Approvals:**
+```
+/gru pending
+/gru approve <approval_id>
+/gru reject <approval_id>
+```
+
+**Secrets:**
+```
+/gru secret set <key> <value>
+/gru secret get <key>
+/gru secret list
+/gru secret delete <key>
+```
+
+**Templates:**
+```
+/gru template save <name> <task>
+/gru template list
+/gru template use <name>
+/gru template delete <name>
+```
+
+**Slack-specific features:**
+- Approval requests appear with clickable buttons in DMs
+- Natural language works in DMs with the bot
+- Uses Socket Mode (no public URL required)
+
 ### Execution Modes Explained
 
 **Supervised (default):**
@@ -574,6 +719,14 @@ See [MCP Servers](https://github.com/modelcontextprotocol/servers) for more.
 4. **Check bot permissions**: Bot needs Send Messages and Read Message History
 5. **Check slash commands**: Type `/gru` - if no commands appear, the bot may need to be re-invited
 
+**Slack:**
+1. **Check your user ID**: Make sure `GRU_SLACK_ADMIN_IDS` matches your Slack member ID
+2. **Check both tokens**: You need both `GRU_SLACK_BOT_TOKEN` (xoxb-...) AND `GRU_SLACK_APP_TOKEN` (xapp-...)
+3. **Check Socket Mode**: Must be enabled in your Slack app settings
+4. **Check bot scopes**: Needs `chat:write`, `commands`, `im:history`, `im:write`
+5. **Check slash command**: The `/gru` command must be created in your app settings
+6. **Reinstall the app**: If permissions changed, reinstall to your workspace
+
 ### "Command not found: python3"
 
 - Make sure Python is installed (see [Step 1](#step-1-install-python))
@@ -629,15 +782,16 @@ Try these in order:
 
 ```
 Telegram Bot --+
-               +--> Orchestrator <-> Claude API
-Discord Bot  --+         |
-                         +-> Scheduler (priority queue)
+               |
+Discord Bot  --+--> Orchestrator <-> Claude API
+               |         |
+Slack Bot    --+         +-> Scheduler (priority queue)
                          +-> Database (SQLite)
                          +-> MCP Client (plugin tools)
                          +-> Secret Store (encrypted)
 ```
 
-Both bots share the same orchestrator. You can run one or both simultaneously.
+All bots share the same orchestrator. You can run any combination simultaneously.
 
 **Components:**
 
@@ -645,6 +799,7 @@ Both bots share the same orchestrator. You can run one or both simultaneously.
 |------|---------|
 | `telegram_bot.py` | Telegram interface, command parsing |
 | `discord_bot.py` | Discord interface, slash commands |
+| `slack_bot.py` | Slack interface, Socket Mode |
 | `orchestrator.py` | Agent lifecycle, tool execution |
 | `claude.py` | Claude API client |
 | `scheduler.py` | Priority queue scheduling |
