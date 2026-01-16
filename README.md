@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
-Self-hosted AI agent orchestration service controlled via Telegram.
+Self-hosted AI agent orchestration service controlled via Telegram or Discord.
 
 Gru lets you spawn, manage, and interact with Claude-powered AI agents from your phone. Agents can execute bash commands, read/write files, and work autonomously on tasks. Think of it as having a coding assistant you can text from anywhere.
 
@@ -14,22 +14,22 @@ Gru lets you spawn, manage, and interact with Claude-powered AI agents from your
 2. Clone and install Gru
 3. Create your `.env` file with your keys
 4. Run `PYTHONPATH=src python -m gru.main`
-5. Open Telegram and message your bot
+5. Open Telegram or Discord and message your bot
 
-That's it. You can now spawn AI agents from your phone.
+That's it. You can now spawn AI agents from your phone or desktop.
 
 ---
 
 ## Prerequisites
 
-You'll need four things before starting:
+You'll need these things before starting:
 
 1. **Python 3.10 or higher**
-2. **A Telegram Bot Token**
-3. **Your Telegram User ID**
+2. **A bot token** (Telegram and/or Discord)
+3. **Your user ID** (for the platform(s) you're using)
 4. **An Anthropic API Key**
 
-Don't worry if you don't have these yet. Follow the steps below.
+You can use Telegram, Discord, or both simultaneously. Don't worry if you don't have these yet. Follow the steps below.
 
 ---
 
@@ -61,6 +61,8 @@ If you see `Python 3.10` or higher, you're good. Skip to Step 2.
   ```
 
 ---
+
+## Telegram Setup
 
 ### Step 2: Create a Telegram Bot
 
@@ -98,7 +100,60 @@ Gru only responds to authorized users. You need your Telegram user ID (a number,
 
 ---
 
-### Step 4: Get an Anthropic API Key
+## Discord Setup
+
+### Step 4: Create a Discord Bot
+
+You need to create a bot in the Discord Developer Portal. This is free.
+
+1. Go to [discord.com/developers/applications](https://discord.com/developers/applications)
+2. Click **New Application**
+3. Give it a name (e.g., "Gru") and click **Create**
+4. Go to the **Bot** tab in the left sidebar
+5. Click **Reset Token** to generate a bot token
+6. Copy the token. It looks like:
+   ```
+   your-bot-token-here
+   ```
+7. **Save this token.** You'll need it for your `.env` file.
+
+**Important Bot Settings:**
+- Under **Privileged Gateway Intents**, enable **Message Content Intent**
+- This allows the bot to read message content for natural language commands
+
+**Invite the bot to your server:**
+
+1. Go to the **OAuth2** tab, then **URL Generator**
+2. Under **Scopes**, select `bot` and `applications.commands`
+3. Under **Bot Permissions**, select:
+   - Send Messages
+   - Send Messages in Threads
+   - Embed Links
+   - Read Message History
+4. Copy the generated URL and open it in your browser
+5. Select your server and click **Authorize**
+
+---
+
+### Step 5: Get Your Discord User ID
+
+Gru only responds to authorized users. You need your Discord user ID (a number).
+
+1. Open Discord
+2. Go to **User Settings** (gear icon)
+3. Go to **Advanced** and enable **Developer Mode**
+4. Close settings
+5. Right-click on your username anywhere in Discord
+6. Click **Copy User ID**
+7. **Save this number.** You'll need it for your `.env` file.
+
+**Want to add multiple admins?** You can add multiple user IDs separated by commas (e.g., `123456789012345678,987654321098765432`).
+
+---
+
+## API Key
+
+### Step 6: Get an Anthropic API Key
 
 Gru uses Claude (made by Anthropic) as its AI brain. You need an API key.
 
@@ -181,10 +236,17 @@ Then open `.env` in any text editor and fill in your values.
 **Manual way:** Create a new file called `.env` with this content:
 
 ```bash
-# Required - you must fill these in
-GRU_TELEGRAM_TOKEN=paste_your_bot_token_here
-GRU_ADMIN_IDS=paste_your_user_id_here
+# Required - Anthropic API key
 ANTHROPIC_API_KEY=paste_your_anthropic_key_here
+
+# Telegram (optional if using Discord)
+GRU_TELEGRAM_TOKEN=paste_your_telegram_bot_token_here
+GRU_ADMIN_IDS=paste_your_telegram_user_id_here
+
+# Discord (optional if using Telegram)
+GRU_DISCORD_TOKEN=paste_your_discord_bot_token_here
+GRU_DISCORD_ADMIN_IDS=paste_your_discord_user_id_here
+GRU_DISCORD_GUILD_ID=optional_server_id_to_restrict_to
 
 # Optional - defaults work fine for most users
 GRU_MASTER_PASSWORD=pick_any_password_for_encrypting_secrets
@@ -196,22 +258,42 @@ GRU_DEFAULT_TIMEOUT=300
 GRU_MAX_AGENTS=10
 ```
 
-**Example with real values (don't use these!):**
+**Example with Telegram only:**
 
 ```bash
+ANTHROPIC_API_KEY=sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxx
 GRU_TELEGRAM_TOKEN=1234567890:ABCdefGHIjklMNOpqrsTUVwxyz
 GRU_ADMIN_IDS=123456789
+```
+
+**Example with Discord only:**
+
+```bash
 ANTHROPIC_API_KEY=sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxx
-GRU_MASTER_PASSWORD=my-super-secret-password-123
+GRU_DISCORD_TOKEN=your-discord-bot-token
+GRU_DISCORD_ADMIN_IDS=123456789012345678
+```
+
+**Example with both:**
+
+```bash
+ANTHROPIC_API_KEY=sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+GRU_TELEGRAM_TOKEN=1234567890:ABCdefGHIjklMNOpqrsTUVwxyz
+GRU_ADMIN_IDS=123456789
+GRU_DISCORD_TOKEN=your-discord-bot-token
+GRU_DISCORD_ADMIN_IDS=123456789012345678
 ```
 
 ### Configuration Options Explained
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `GRU_TELEGRAM_TOKEN` | Yes | Your bot token from @BotFather |
-| `GRU_ADMIN_IDS` | Yes | Your Telegram user ID(s), comma-separated |
 | `ANTHROPIC_API_KEY` | Yes | Your Anthropic API key |
+| `GRU_TELEGRAM_TOKEN` | If using Telegram | Your bot token from @BotFather |
+| `GRU_ADMIN_IDS` | If using Telegram | Your Telegram user ID(s), comma-separated |
+| `GRU_DISCORD_TOKEN` | If using Discord | Your bot token from Discord Developer Portal |
+| `GRU_DISCORD_ADMIN_IDS` | If using Discord | Your Discord user ID(s), comma-separated |
+| `GRU_DISCORD_GUILD_ID` | No | Restrict bot to a specific Discord server |
 | `GRU_MASTER_PASSWORD` | No | Password for encrypting stored secrets |
 | `GRU_DATA_DIR` | No | Where Gru stores its database (default: `~/.gru`) |
 | `GRU_WORKDIR` | No | Default directory for agents to work in (default: `~/gru-workspace`) |
@@ -219,6 +301,8 @@ GRU_MASTER_PASSWORD=my-super-secret-password-123
 | `GRU_MAX_TOKENS` | No | Max tokens per response (default: `8192`) |
 | `GRU_DEFAULT_TIMEOUT` | No | Agent timeout in seconds (default: `300`) |
 | `GRU_MAX_AGENTS` | No | Max concurrent agents (default: `10`) |
+
+**Note:** You must configure at least one bot interface (Telegram or Discord). You can use both simultaneously.
 
 ---
 
@@ -262,7 +346,8 @@ When Gru starts correctly, you'll see:
 ```
 Gru server started
 Data directory: /home/you/.gru
-Admin IDs: [123456789]
+Telegram admin IDs: [123456789]
+Discord admin IDs: [123456789012345678]
 ```
 
 If you have MCP servers configured (optional), you'll also see:
@@ -272,7 +357,7 @@ MCP server 'filesystem' started with 14 tools
 Started 1 MCP server(s)
 ```
 
-**Now open Telegram and send a message to your bot!**
+**Now open Telegram or Discord and send a message to your bot!**
 
 ---
 
@@ -310,6 +395,10 @@ check on my agents
 Gru understands what you want and either spawns an agent or answers directly.
 
 ### Commands Reference
+
+Commands work the same on both Telegram and Discord. On Telegram, use `/gru <command>`. On Discord, use slash commands `/gru <command>`.
+
+#### Telegram Commands
 
 All commands start with `/gru`:
 
@@ -357,6 +446,59 @@ All commands start with `/gru`:
 /gru template use <name>           Spawn from template
 /gru template delete <name>        Delete a template
 ```
+
+#### Discord Commands
+
+Discord uses slash commands. Type `/gru` and Discord will show available subcommands:
+
+**Spawning Agents:**
+```
+/gru spawn task:<task>
+/gru spawn task:<task> mode:unsupervised
+/gru spawn task:<task> mode:oneshot
+/gru spawn task:<task> workdir:/path priority:high
+```
+
+**Managing Agents:**
+```
+/gru status
+/gru status agent_id:<id>
+/gru list
+/gru list status:running
+/gru pause agent_id:<id>
+/gru resume agent_id:<id>
+/gru terminate agent_id:<id>
+/gru nudge agent_id:<id> message:<text>
+/gru logs agent_id:<id>
+```
+
+**Approvals (supervised mode):**
+```
+/gru pending
+/gru approve approval_id:<id>
+/gru reject approval_id:<id>
+```
+
+**Secrets:**
+```
+/gru secret_set key:<KEY> value:<value>
+/gru secret_get key:<KEY>
+/gru secret_list
+/gru secret_delete key:<KEY>
+```
+
+**Templates:**
+```
+/gru template_save name:<name> task:<task>
+/gru template_list
+/gru template_use name:<name>
+/gru template_delete name:<name>
+```
+
+**Discord-specific features:**
+- Approval requests appear with clickable Approve/Reject buttons
+- Multi-option approvals show numbered option buttons
+- Natural language works in any channel the bot can see
 
 ### Execution Modes Explained
 
@@ -419,10 +561,18 @@ See [MCP Servers](https://github.com/modelcontextprotocol/servers) for more.
 
 ### Bot not responding
 
+**Telegram:**
 1. **Check your user ID**: Make sure `GRU_ADMIN_IDS` in `.env` matches your Telegram user ID exactly
 2. **Check the token**: Make sure `GRU_TELEGRAM_TOKEN` is correct (no extra spaces)
 3. **Check Gru is running**: Look at the terminal for errors
 4. **Restart Gru**: Stop it (Ctrl+C) and start again
+
+**Discord:**
+1. **Check your user ID**: Make sure `GRU_DISCORD_ADMIN_IDS` matches your Discord user ID
+2. **Check the token**: Make sure `GRU_DISCORD_TOKEN` is correct
+3. **Check Message Content Intent**: Enable it in Discord Developer Portal > Bot settings
+4. **Check bot permissions**: Bot needs Send Messages and Read Message History
+5. **Check slash commands**: Type `/gru` - if no commands appear, the bot may need to be re-invited
 
 ### "Command not found: python3"
 
@@ -478,19 +628,23 @@ Try these in order:
 ## Architecture
 
 ```
-Telegram Bot <-> Orchestrator <-> Claude API
-                     |
-                     +-> Scheduler (priority queue)
-                     +-> Database (SQLite)
-                     +-> MCP Client (plugin tools)
-                     +-> Secret Store (encrypted)
+Telegram Bot --+
+               +--> Orchestrator <-> Claude API
+Discord Bot  --+         |
+                         +-> Scheduler (priority queue)
+                         +-> Database (SQLite)
+                         +-> MCP Client (plugin tools)
+                         +-> Secret Store (encrypted)
 ```
+
+Both bots share the same orchestrator. You can run one or both simultaneously.
 
 **Components:**
 
 | File | Purpose |
 |------|---------|
 | `telegram_bot.py` | Telegram interface, command parsing |
+| `discord_bot.py` | Discord interface, slash commands |
 | `orchestrator.py` | Agent lifecycle, tool execution |
 | `claude.py` | Claude API client |
 | `scheduler.py` | Priority queue scheduling |
