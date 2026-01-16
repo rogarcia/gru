@@ -88,7 +88,7 @@ class Config:
             default_memory_limit=os.getenv("GRU_MEMORY_LIMIT", "512M"),
             default_cpu_quota=int(os.getenv("GRU_CPU_QUOTA", "50")),
             enable_worktrees=os.getenv("GRU_ENABLE_WORKTREES", "true").lower() == "true",
-            worktree_base_dir=Path(os.getenv("GRU_WORKTREE_DIR")) if os.getenv("GRU_WORKTREE_DIR") else None,
+            worktree_base_dir=Path(wt_dir) if (wt_dir := os.getenv("GRU_WORKTREE_DIR")) else None,
             delete_worktree_branch=os.getenv("GRU_DELETE_WORKTREE_BRANCH", "false").lower() == "true",
         )
 
