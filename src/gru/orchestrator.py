@@ -61,6 +61,8 @@ class Agent:
         self._cancelled = False
         self._start_time: datetime | None = None
         self._turn_count: int = 0
+        self._last_report_time: datetime | None = None
+        self._recent_tools: list[str] = []  # Track recent tool calls for progress reports
 
     def cancel(self) -> None:
         """Mark agent as cancelled."""
@@ -90,6 +92,37 @@ class Agent:
         if not self._start_time:
             return 0
         return (datetime.now() - self._start_time).total_seconds()
+
+    def should_send_progress_report(self, interval_minutes: int) -> bool:
+        """Check if it's time to send a progress report."""
+        if interval_minutes <= 0:
+            return False
+        if self._last_report_time is None:
+            # First report after interval from start
+            if self._start_time is None:
+                return False
+            elapsed = (datetime.now() - self._start_time).total_seconds()
+            return elapsed >= interval_minutes * 60
+        elapsed = (datetime.now() - self._last_report_time).total_seconds()
+        return elapsed >= interval_minutes * 60
+
+    def mark_report_sent(self) -> None:
+        """Mark that a progress report was sent."""
+        self._last_report_time = datetime.now()
+        self._recent_tools = []
+
+    def add_tool_call(self, tool_name: str, summary: str) -> None:
+        """Track a tool call for progress reporting."""
+        self._recent_tools.append(f"{tool_name}: {summary}")
+
+    def get_progress_summary(self) -> str:
+        """Generate a progress summary."""
+        runtime_mins = int(self.runtime_seconds / 60)
+        summary = f"Turn {self._turn_count}, running for {runtime_mins}m"
+        if self._recent_tools:
+            recent = self._recent_tools[-5:]  # Last 5 tool calls
+            summary += "\nRecent: " + ", ".join(recent)
+        return summary
 
 
 class Orchestrator:
@@ -365,6 +398,12 @@ class Orchestrator:
 
                 agent.increment_turn()
 
+                # Send periodic progress report if enabled
+                if agent.should_send_progress_report(self.config.progress_report_interval):
+                    summary = agent.get_progress_summary()
+                    await self.notify(agent.id, f"Progress: {summary}")
+                    agent.mark_report_sent()
+
                 # Check for incoming messages from other agents
                 incoming = await self.coordinator.get_messages(agent.id, unread_only=True)
                 for msg in incoming:
@@ -500,6 +539,9 @@ class Orchestrator:
             # Execute tool
             try:
                 result = await self._execute_tool(agent, tool_use.name, tool_use.input, task_id)
+                # Track tool call for progress reports
+                tool_summary = self._summarize_tool_input(tool_use.name, tool_use.input)
+                agent.add_tool_call(tool_use.name, tool_summary)
                 # Truncate large outputs to prevent context overflow
                 if len(result) > self.config.max_tool_output:
                     result = result[: self.config.max_tool_output] + (
@@ -612,6 +654,21 @@ class Orchestrator:
         if handler is None:
             raise ValueError(f"Unknown tool: {tool_name}")
         return await handler()
+
+    def _summarize_tool_input(self, tool_name: str, tool_input: dict) -> str:
+        """Generate a brief summary of tool input for progress reports."""
+        if tool_name == "bash":
+            cmd = tool_input.get("command", "")
+            return cmd[:40] + "..." if len(cmd) > 40 else cmd
+        elif tool_name == "read_file":
+            return tool_input.get("path", "")[:40]
+        elif tool_name == "write_file":
+            path = tool_input.get("path", "")
+            return path[:40]
+        elif tool_name == "search_files":
+            return tool_input.get("pattern", "")[:30]
+        else:
+            return tool_name
 
     async def _execute_bash(self, command: str, workdir: str) -> str:
         """Execute a bash command in the agent's working directory."""

@@ -64,6 +64,9 @@ class Config:
     delete_worktree_branch: bool = False  # Delete branch when agent completes
     auto_push: bool = True  # Auto commit and push on agent pause/complete
 
+    # Progress reports
+    progress_report_interval: int = 0  # minutes between progress reports (0 = disabled)
+
     # Webhook server
     webhook_enabled: bool = False
     webhook_host: str = "0.0.0.0"
@@ -128,6 +131,7 @@ class Config:
             webhook_host=os.getenv("GRU_WEBHOOK_HOST", "0.0.0.0"),
             webhook_port=int(os.getenv("GRU_WEBHOOK_PORT", "8080")),
             webhook_secret=os.getenv("GRU_WEBHOOK_SECRET", ""),
+            progress_report_interval=int(os.getenv("GRU_PROGRESS_REPORT_INTERVAL", "0")),
         )
 
     def validate(self) -> list[str]:

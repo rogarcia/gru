@@ -236,6 +236,48 @@ class DiscordBot:
             return f"[{num}]"
         return agent_id
 
+    def _format_log_entry(self, msg: dict) -> str:
+        """Format a conversation log entry for display."""
+        role = msg["role"]
+        content = msg["content"]
+
+        if isinstance(content, str):
+            return f"[{role}] {content[:200]}"
+
+        if isinstance(content, list):
+            parts = []
+            for item in content:
+                if isinstance(item, dict):
+                    item_type = item.get("type", "")
+                    if item_type == "text":
+                        text = item.get("text", "")[:100]
+                        parts.append(text)
+                    elif item_type == "tool_use":
+                        name = item.get("name", "unknown")
+                        inp = item.get("input", {})
+                        summary = self._summarize_tool_input(name, inp)
+                        parts.append(f"[tool] {name}({summary})")
+                    elif item_type == "tool_result":
+                        result = item.get("content", "")[:80]
+                        is_err = item.get("is_error", False)
+                        prefix = "error" if is_err else "result"
+                        parts.append(f"[{prefix}] {result}")
+            return f"[{role}] " + " | ".join(parts) if parts else f"[{role}] (empty)"
+
+        return f"[{role}] {str(content)[:200]}"
+
+    def _summarize_tool_input(self, tool_name: str, tool_input: dict) -> str:
+        """Summarize tool input for logs display."""
+        if tool_name == "bash":
+            cmd = tool_input.get("command", "")
+            return cmd[:30] + "..." if len(cmd) > 30 else cmd
+        elif tool_name in ("read_file", "write_file"):
+            return tool_input.get("path", "")[:30]
+        elif tool_name == "search_files":
+            return tool_input.get("pattern", "")[:20]
+        else:
+            return str(tool_input)[:30]
+
     async def _check_admin(self, interaction: discord.Interaction) -> bool:
         """Check admin and reply if not authorized."""
         if not self._is_admin(interaction.user.id):
@@ -580,30 +622,25 @@ Default workdir: {self.config.default_workdir}"""
             await interaction.response.send_message("\n".join(lines))
 
         @gru_group.command(name="logs", description="Get agent conversation logs")
-        @app_commands.describe(agent_id="Agent ID")
+        @app_commands.describe(agent_id="Agent ID or number")
         async def cmd_logs(interaction: discord.Interaction, agent_id: str):
             if not await self._check_admin(interaction):
                 return
             if not await self._check_rate_limit(interaction):
                 return
 
-            conversation = await self.orchestrator.db.get_conversation(agent_id)
+            resolved_id = self._resolve_agent_ref(agent_id) or agent_id
+            conversation = await self.orchestrator.db.get_conversation(resolved_id)
 
             if not conversation:
-                await interaction.response.send_message(f"No logs found for agent {agent_id}", ephemeral=True)
+                await interaction.response.send_message(f"No logs found for agent {resolved_id}", ephemeral=True)
                 return
 
-            lines = []
-            for msg in conversation[-20:]:
-                content = msg["content"]
-                if isinstance(content, list):
-                    content = str(content)
-                lines.append(f"[{msg['role']}] {content[:200]}")
-
+            lines = [self._format_log_entry(msg) for msg in conversation[-20:]]
             output = "\n\n".join(lines)
             await interaction.response.defer()
             if interaction.channel:
-                await self.send_output(interaction.channel, output, f"logs_{agent_id}.txt")  # type: ignore[arg-type]
+                await self.send_output(interaction.channel, output, f"logs_{resolved_id}.txt")  # type: ignore[arg-type]
 
         @gru_group.command(name="secret_set", description="Set a secret")
         @app_commands.describe(key="Secret key", value="Secret value")
