@@ -918,7 +918,9 @@ Be concise and helpful."""
                 description="Terminate/kill a running or failed agent",
                 input_schema={
                     "type": "object",
-                    "properties": {"agent_ref": {"type": "string", "description": "Agent number (e.g. '1') or full ID"}},
+                    "properties": {
+                        "agent_ref": {"type": "string", "description": "Agent number (e.g. '1') or full ID"}
+                    },
                     "required": ["agent_ref"],
                 },
             ),
@@ -927,7 +929,9 @@ Be concise and helpful."""
                 description="Pause a running agent",
                 input_schema={
                     "type": "object",
-                    "properties": {"agent_ref": {"type": "string", "description": "Agent number (e.g. '1') or full ID"}},
+                    "properties": {
+                        "agent_ref": {"type": "string", "description": "Agent number (e.g. '1') or full ID"}
+                    },
                     "required": ["agent_ref"],
                 },
             ),
@@ -936,7 +940,9 @@ Be concise and helpful."""
                 description="Resume a paused agent",
                 input_schema={
                     "type": "object",
-                    "properties": {"agent_ref": {"type": "string", "description": "Agent number (e.g. '1') or full ID"}},
+                    "properties": {
+                        "agent_ref": {"type": "string", "description": "Agent number (e.g. '1') or full ID"}
+                    },
                     "required": ["agent_ref"],
                 },
             ),
@@ -945,7 +951,9 @@ Be concise and helpful."""
                 description="Get status of a specific agent or overall system status",
                 input_schema={
                     "type": "object",
-                    "properties": {"agent_ref": {"type": "string", "description": "Agent number (e.g. '1') or full ID (optional)"}},
+                    "properties": {
+                        "agent_ref": {"type": "string", "description": "Agent number (e.g. '1') or full ID (optional)"}
+                    },
                 },
             ),
             ToolDefinition(
