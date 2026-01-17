@@ -64,6 +64,12 @@ class Config:
     delete_worktree_branch: bool = False  # Delete branch when agent completes
     auto_push: bool = True  # Auto commit and push on agent pause/complete
 
+    # Webhook server
+    webhook_enabled: bool = False
+    webhook_host: str = "0.0.0.0"
+    webhook_port: int = 8080
+    webhook_secret: str = ""  # Optional secret for signature verification
+
     # Encryption
     master_key_iterations: int = 480000
 
@@ -118,6 +124,10 @@ class Config:
             enable_worktrees=os.getenv("GRU_ENABLE_WORKTREES", "true").lower() == "true",
             worktree_base_dir=Path(wt_dir) if (wt_dir := os.getenv("GRU_WORKTREE_DIR")) else None,
             delete_worktree_branch=os.getenv("GRU_DELETE_WORKTREE_BRANCH", "false").lower() == "true",
+            webhook_enabled=os.getenv("GRU_WEBHOOK_ENABLED", "false").lower() == "true",
+            webhook_host=os.getenv("GRU_WEBHOOK_HOST", "0.0.0.0"),
+            webhook_port=int(os.getenv("GRU_WEBHOOK_PORT", "8080")),
+            webhook_secret=os.getenv("GRU_WEBHOOK_SECRET", ""),
         )
 
     def validate(self) -> list[str]:

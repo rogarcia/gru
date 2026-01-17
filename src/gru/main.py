@@ -16,6 +16,7 @@ from gru.discord_bot import DiscordBot
 from gru.orchestrator import Orchestrator
 from gru.slack_bot import SlackBot
 from gru.telegram_bot import TelegramBot
+from gru.webhook import WebhookServer
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +59,9 @@ async def run_server(config: Config) -> None:
     if config.slack_bot_token and config.slack_app_token and config.slack_admin_ids:
         slack_bot = SlackBot(config, orchestrator)
 
+    # Initialize webhook server
+    webhook_server = WebhookServer(config, orchestrator)
+
     # Set up signal handlers
     loop = asyncio.get_running_loop()
     shutdown_event = asyncio.Event()
@@ -94,6 +98,9 @@ async def run_server(config: Config) -> None:
             logger.info("Slack bot starting...")
             logger.info("Slack admin IDs: %s", config.slack_admin_ids)
 
+        # Start webhook server
+        await webhook_server.start()
+
         logger.info("Gru server started")
         logger.info("Data directory: %s", config.data_dir)
 
@@ -105,6 +112,7 @@ async def run_server(config: Config) -> None:
 
     finally:
         logger.info("Shutting down...")
+        await webhook_server.stop()
         await orchestrator.mcp.stop_all()
         await orchestrator.stop()
         if telegram_bot:
