@@ -395,6 +395,7 @@ GRU_SLACK_ADMIN_IDS=U01ABC123DE
 | `GRU_WEBHOOK_ENABLED` | No | Enable webhook server (default: `false`) |
 | `GRU_WEBHOOK_PORT` | No | Webhook server port (default: `8080`) |
 | `GRU_WEBHOOK_SECRET` | No | Vercel webhook secret for signature verification |
+| `GRU_PROGRESS_REPORT_INTERVAL` | No | Minutes between progress reports (default: `0` = disabled) |
 
 **Note:** You must configure at least one bot interface (Telegram, Discord, or Slack). You can use multiple simultaneously.
 
@@ -665,6 +666,37 @@ Use `/gru <command>` in any channel or DM:
 - Agent runs to completion without any interaction
 - Results are sent when done
 - Add `--oneshot` flag
+
+---
+
+### Monitoring Agents
+
+**Progress Reports:**
+
+Enable automatic progress updates during long-running tasks:
+
+```bash
+GRU_PROGRESS_REPORT_INTERVAL=5  # Report every 5 minutes
+```
+
+When enabled, agents send periodic updates showing:
+- Current turn count and runtime
+- Recent tool calls (e.g., `bash: git status`, `write_file: src/app.py`)
+
+**Logs:**
+
+View an agent's conversation history:
+
+```
+/gru logs <agent_id>
+```
+
+Logs show formatted tool calls instead of raw JSON:
+- `[tool] bash(git status)` - tool invocation
+- `[result] output...` - tool result
+- `[error] message` - error result
+
+You can use agent numbers or nicknames: `/gru logs 1` or `/gru logs linter`
 
 ---
 
