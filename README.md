@@ -392,6 +392,9 @@ GRU_SLACK_ADMIN_IDS=U01ABC123DE
 | `GRU_MAX_TOKENS` | No | Max tokens per response (default: `8192`) |
 | `GRU_DEFAULT_TIMEOUT` | No | Agent timeout in seconds (default: `300`) |
 | `GRU_MAX_AGENTS` | No | Max concurrent agents (default: `10`) |
+| `GRU_WEBHOOK_ENABLED` | No | Enable webhook server (default: `false`) |
+| `GRU_WEBHOOK_PORT` | No | Webhook server port (default: `8080`) |
+| `GRU_WEBHOOK_SECRET` | No | Vercel webhook secret for signature verification |
 
 **Note:** You must configure at least one bot interface (Telegram, Discord, or Slack). You can use multiple simultaneously.
 
@@ -699,6 +702,55 @@ MCP (Model Context Protocol) lets you extend Gru with additional tools. This is 
 | `@modelcontextprotocol/server-puppeteer` | Browser automation |
 
 See [MCP Servers](https://github.com/modelcontextprotocol/servers) for more.
+
+---
+
+## Webhook Setup (Vercel)
+
+Gru can receive webhooks from Vercel to notify agents when preview deployments are ready. This is useful when agents are building web apps and push to branches.
+
+### How It Works
+
+1. Agent pushes code to a branch named `gru-agent-<agent_id>`
+2. Vercel deploys the branch as a preview
+3. Vercel sends a webhook to Gru
+4. Gru notifies the agent with the preview URL
+
+### Configuration
+
+Add these to your `.env`:
+
+```bash
+GRU_WEBHOOK_ENABLED=true
+GRU_WEBHOOK_HOST=0.0.0.0
+GRU_WEBHOOK_PORT=8080
+GRU_WEBHOOK_SECRET=your-vercel-webhook-secret
+```
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `GRU_WEBHOOK_ENABLED` | No | Enable webhook server (default: `false`) |
+| `GRU_WEBHOOK_HOST` | No | Host to bind (default: `0.0.0.0`) |
+| `GRU_WEBHOOK_PORT` | No | Port to listen on (default: `8080`) |
+| `GRU_WEBHOOK_SECRET` | No | Vercel webhook secret for signature verification |
+
+### Vercel Setup
+
+1. Go to your Vercel project settings
+2. Navigate to **Git** > **Deploy Hooks** or **Settings** > **Webhooks**
+3. Add a webhook pointing to `http://your-server:8080/webhook/vercel`
+4. Copy the signing secret and set it as `GRU_WEBHOOK_SECRET`
+
+### Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/webhook/vercel` | POST | Receives Vercel deployment webhooks |
+| `/health` | GET | Health check (returns `{"status": "ok"}`) |
+
+### Branch Naming
+
+For webhooks to work, agents must push to branches matching the pattern `gru-agent-<agent_id>`. The webhook handler extracts the agent ID from the branch name and notifies the correct agent.
 
 ---
 
