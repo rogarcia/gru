@@ -18,7 +18,7 @@ AI agents you can control from your phone. Message a bot, get a coding assistant
 
 **Step 2:** Deploy (1 min)
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/zscole/gru)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/PGw7ud?referralCode=O4yxwb)
 
 Click the button above, then paste your 3 keys:
 - `ANTHROPIC_API_KEY` → your Anthropic key
