@@ -3,69 +3,47 @@
 [![CI](https://github.com/zscole/gru/actions/workflows/ci.yml/badge.svg)](https://github.com/zscole/gru/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+
+AI agents you can control from your phone. Spawn Claude-powered coding assistants via Telegram, Discord, or Slack.
+
+## Quick Start (2 minutes)
+
+**Easiest:** Click the button, add your API keys, done.
+
 [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/zscole/gru)
 
-Self-hosted AI agent orchestration service controlled via Telegram, Discord, or Slack.
+You'll need:
+- An [Anthropic API key](https://console.anthropic.com)
+- A bot token ([Telegram](#telegram-setup), [Discord](#discord-setup), or [Slack](#slack-setup))
+- Your user ID for the platform you're using
+
+That's it. Your bot will be live in about 2 minutes.
+
+**Prefer to self-host?** See [Installation](#installation) below.
+
+---
+
+## What is Gru?
 
 Gru lets you spawn, manage, and interact with Claude-powered AI agents from your phone. Agents can execute bash commands, read/write files, and work autonomously on tasks. Think of it as having a coding assistant you can message from anywhere.
-
-## Quick Start
-
-1. Get your API keys (see [Prerequisites](#prerequisites) below)
-2. Clone and install Gru
-3. Create your `.env` file with your keys
-4. Run `PYTHONPATH=src python -m gru.main`
-5. Open Telegram, Discord, or Slack and message your bot
-
-That's it. You can now spawn AI agents from your phone or desktop.
 
 ---
 
 ## Prerequisites
 
-You'll need these things before starting:
+Before deploying, you'll need:
 
-1. **Python 3.10 or higher**
-2. **A bot token** (Telegram, Discord, and/or Slack)
-3. **Your user ID** (for the platform(s) you're using)
-4. **An Anthropic API Key**
+1. **An Anthropic API Key** - [Get one here](https://console.anthropic.com)
+2. **A bot token** for Telegram, Discord, and/or Slack (setup guides below)
+3. **Your user ID** for the platform(s) you're using
 
-You can use Telegram, Discord, Slack, or any combination. Don't worry if you don't have these yet. Follow the steps below.
-
----
-
-### Step 1: Install Python
-
-**Check if you already have Python:**
-
-Open your terminal (Terminal on Mac, Command Prompt on Windows) and type:
-
-```bash
-python3 --version
-```
-
-If you see `Python 3.10` or higher, you're good. Skip to Step 2.
-
-**If you need to install Python:**
-
-- **Mac**: Install [Homebrew](https://brew.sh) first, then run:
-  ```bash
-  brew install python@3.11
-  ```
-
-- **Windows**: Download from [python.org/downloads](https://www.python.org/downloads/). During installation, check "Add Python to PATH".
-
-- **Linux (Ubuntu/Debian)**:
-  ```bash
-  sudo apt update
-  sudo apt install python3 python3-pip python3-venv
-  ```
+You can use one platform or all three. Follow the setup guide for each platform you want to use.
 
 ---
 
 ## Telegram Setup
 
-### Step 2: Create a Telegram Bot
+### Create a Telegram Bot
 
 You need to create a bot on Telegram. This is free and takes 2 minutes.
 
@@ -84,7 +62,7 @@ You need to create a bot on Telegram. This is free and takes 2 minutes.
 
 ---
 
-### Step 3: Get Your Telegram User ID
+### Get Your Telegram User ID
 
 Gru only responds to authorized users. You need your Telegram user ID (a number, not your username).
 
@@ -103,7 +81,7 @@ Gru only responds to authorized users. You need your Telegram user ID (a number,
 
 ## Discord Setup
 
-### Step 4: Create a Discord Bot
+### Create a Discord Bot
 
 You need to create a bot in the Discord Developer Portal. This is free.
 
@@ -136,7 +114,7 @@ You need to create a bot in the Discord Developer Portal. This is free.
 
 ---
 
-### Step 5: Get Your Discord User ID
+### Get Your Discord User ID
 
 Gru only responds to authorized users. You need your Discord user ID (a number).
 
@@ -154,7 +132,7 @@ Gru only responds to authorized users. You need your Discord user ID (a number).
 
 ## Slack Setup
 
-### Step 6: Create a Slack App
+### Create a Slack App
 
 You need to create an app in the Slack API dashboard. This is free.
 
@@ -208,7 +186,7 @@ You need to create an app in the Slack API dashboard. This is free.
 
 ---
 
-### Step 7: Get Your Slack User ID
+### Get Your Slack User ID
 
 Gru only responds to authorized users. You need your Slack user ID.
 
@@ -225,7 +203,7 @@ Gru only responds to authorized users. You need your Slack user ID.
 
 ## API Key
 
-### Step 8: Get an Anthropic API Key
+### Get an Anthropic API Key
 
 Gru uses Claude (made by Anthropic) as its AI brain. You need an API key.
 
@@ -244,11 +222,13 @@ Gru uses Claude (made by Anthropic) as its AI brain. You need an API key.
 
 ---
 
-## Installation
+## Installation (Self-Hosted)
 
-Now that you have all your keys, let's install Gru.
+If you prefer to run Gru on your own machine or server instead of Railway:
 
-### Option A: Standard Installation (Recommended)
+### Option A: Standard Installation
+
+**Requires Python 3.10+.** Check with `python3 --version`. Install from [python.org](https://www.python.org/downloads/) if needed.
 
 Open your terminal and run these commands one at a time:
 
@@ -290,30 +270,6 @@ docker-compose up -d
 ```
 
 That's it. The bot will start automatically.
-
-### Option C: One-Click Cloud Deploy (Easiest)
-
-Don't want to run anything locally? Deploy to Railway with one click:
-
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/zscole/gru)
-
-**Steps:**
-1. Click the button above
-2. Create a Railway account (free)
-3. Fill in your environment variables:
-   - `ANTHROPIC_API_KEY` - your Anthropic API key
-   - `GRU_TELEGRAM_TOKEN` - your Telegram bot token (optional)
-   - `GRU_ADMIN_IDS` - your Telegram user ID (optional)
-   - `GRU_DISCORD_TOKEN` - your Discord bot token (optional)
-   - `GRU_DISCORD_ADMIN_IDS` - your Discord user ID (optional)
-   - `GRU_SLACK_BOT_TOKEN` - your Slack bot token (optional)
-   - `GRU_SLACK_APP_TOKEN` - your Slack app token (optional)
-   - `GRU_SLACK_ADMIN_IDS` - your Slack user ID (optional)
-4. Click Deploy
-
-Railway handles everything else. Your bot will be running in about 2 minutes.
-
-**Cost:** Railway offers a free trial. After that, Gru typically costs $5-10/month depending on usage.
 
 ---
 
