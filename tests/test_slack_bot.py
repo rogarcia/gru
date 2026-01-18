@@ -11,7 +11,6 @@ import pytest
 from gru.config import Config
 from gru.slack_bot import RateLimiter, SlackBot
 
-
 # =============================================================================
 # Fixtures
 # =============================================================================
@@ -898,19 +897,20 @@ class TestTemplateCommands:
 class TestNotifyCallback:
     """Tests for notification callback."""
 
-    def test_notify_callback_no_running_loop(self, bot):
-        """Test notify callback with no running loop."""
-        # Should not raise when no event loop is running
-        bot.notify_callback("agent1", "Test message")
-
     @pytest.mark.asyncio
-    async def test_notify_callback_sends_messages(self, bot):
+    async def test_notify_callback_sends_messages(self, bot, config):
         """Test notify callback sends messages to admins."""
         bot.notify_callback("agent1", "Test message")
         # Allow async task to run
         await asyncio.sleep(0.01)
-        # Should have attempted to send to admins
-        assert bot._client.chat_postMessage.called
+
+        # Verify message was sent to admin with correct content
+        bot._client.chat_postMessage.assert_called()
+        call_kwargs = bot._client.chat_postMessage.call_args.kwargs
+        # Should send to one of the admin IDs
+        assert call_kwargs["channel"] in config.slack_admin_ids
+        assert "agent1" in call_kwargs["text"]
+        assert "Test message" in call_kwargs["text"]
 
 
 class TestApprovalCallback:
@@ -927,7 +927,7 @@ class TestApprovalCallback:
     async def test_approval_callback_with_options(self, bot):
         """Test approval callback with options."""
         options = ["Option A", "Option B", "Option C"]
-        future = bot.approval_callback("approval1", {"question": "Which option?", "options": options})
+        bot.approval_callback("approval1", {"question": "Which option?", "options": options})
 
         assert "approval1" in bot._pending_approvals
         await asyncio.sleep(0.01)
@@ -968,9 +968,17 @@ class TestCancelApproval:
 
     @pytest.mark.asyncio
     async def test_cancel_approval_handles_missing(self, bot):
-        """Test cancel_approval handles non-existent approval."""
-        # Should not raise
+        """Test cancel_approval handles non-existent approval gracefully."""
+        # Ensure approval doesn't exist
+        assert "nonexistent" not in bot._pending_approvals
+
+        # Should complete without error and not modify state
         await bot.cancel_approval("nonexistent")
+
+        # State should remain unchanged
+        assert "nonexistent" not in bot._pending_approvals
+        # No chat_update calls since there's nothing to cancel
+        bot._client.chat_update.assert_not_called()
 
 
 # =============================================================================

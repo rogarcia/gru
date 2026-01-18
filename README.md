@@ -887,6 +887,7 @@ All bots share the same orchestrator. You can run any combination simultaneously
 | `orchestrator.py` | Agent lifecycle, tool execution |
 | `claude.py` | Claude API client |
 | `scheduler.py` | Priority queue scheduling |
+| `webhook.py` | Vercel deployment webhooks |
 | `mcp.py` | MCP server management |
 | `crypto.py` | Secret encryption |
 | `db.py` | SQLite database |

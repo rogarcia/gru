@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
@@ -627,21 +628,30 @@ class TestOrchestratorCallbacks:
     @pytest.mark.asyncio
     async def test_set_notify_callback(self, orchestrator):
         """Test setting notify callback."""
-        callback = lambda agent_id, msg: None
+
+        def callback(agent_id: str, msg: str) -> None:
+            pass
+
         orchestrator.set_notify_callback(callback)
         assert orchestrator._notify_callback == callback
 
     @pytest.mark.asyncio
     async def test_set_approval_callback(self, orchestrator):
         """Test setting approval callback."""
-        callback = lambda approval_id, details: asyncio.Future()
+
+        def callback(approval_id: str, details: dict) -> asyncio.Future:  # type: ignore[type-arg]
+            return asyncio.Future()
+
         orchestrator.set_approval_callback(callback)
         assert orchestrator._approval_callback == callback
 
     @pytest.mark.asyncio
     async def test_set_cancel_approval_callback(self, orchestrator):
         """Test setting cancel approval callback."""
-        callback = lambda approval_id: None
+
+        def callback(approval_id: str) -> None:
+            pass
+
         orchestrator.set_cancel_approval_callback(callback)
         assert orchestrator._cancel_approval_callback == callback
 

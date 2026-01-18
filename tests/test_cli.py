@@ -2,16 +2,13 @@
 
 from __future__ import annotations
 
-import asyncio
 import tempfile
-from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from click.testing import CliRunner
 
 from gru.cli import cli, get_orchestrator, run_async
-
 
 # =============================================================================
 # Fixtures
@@ -106,22 +103,6 @@ class TestRunAsync:
         async def sample_coro():
             return "result"
 
-        result = run_async(sample_coro())
-        assert result == "result"
-
-    def test_run_async_with_existing_loop(self):
-        """Test run_async uses existing loop."""
-
-        async def sample_coro():
-            return "result"
-
-        async def test():
-            # Inside an async context, there's a running loop
-            # but run_until_complete can't be used in this case
-            # so we test the try branch
-            pass
-
-        # Just verify it doesn't crash in the no-loop case
         result = run_async(sample_coro())
         assert result == "result"
 
@@ -272,18 +253,23 @@ class TestListCommand:
     def test_list_with_status_filter(self, runner, mock_db, mock_crypto, mock_secrets, mock_orchestrator):
         """Test list with status filter."""
         with setup_cli_mocks(mock_db, mock_crypto, mock_secrets, mock_orchestrator):
-            result = runner.invoke(cli, ["list", "--status", "running"])
+            runner.invoke(cli, ["list", "--status", "running"])
 
         mock_orchestrator.list_agents.assert_called_once_with("running")
 
     def test_list_truncates_long_tasks(self, runner, mock_db, mock_crypto, mock_secrets, mock_orchestrator):
-        """Test list truncates long task descriptions."""
+        """Test list truncates long task descriptions to 50 chars."""
         long_task = "x" * 100
         mock_orchestrator.list_agents.return_value = [{"id": "agent-1", "status": "running", "task": long_task}]
         with setup_cli_mocks(mock_db, mock_crypto, mock_secrets, mock_orchestrator):
             result = runner.invoke(cli, ["list"])
 
+        # Verify truncation indicator is present
         assert "..." in result.output
+        # Verify full 100-char task is NOT in output
+        assert long_task not in result.output
+        # Verify truncated prefix IS in output (first 50 chars)
+        assert "x" * 47 + "..." in result.output
 
 
 # =============================================================================
@@ -671,7 +657,7 @@ class TestCLISetup:
     def test_cli_initializes_crypto_with_env_var(self, runner, mock_db, mock_crypto, mock_secrets, mock_orchestrator):
         """Test CLI initializes crypto with GRU_MASTER_PASSWORD."""
         with setup_cli_mocks(mock_db, mock_crypto, mock_secrets, mock_orchestrator):
-            result = runner.invoke(cli, ["status"], env={"GRU_MASTER_PASSWORD": "test_password"})
+            runner.invoke(cli, ["status"], env={"GRU_MASTER_PASSWORD": "test_password"})
 
         # Verify crypto was initialized
         mock_crypto.initialize.assert_called_once_with("test_password")

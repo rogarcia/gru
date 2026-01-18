@@ -138,15 +138,26 @@ class TestRateLimiter:
         assert limiter.is_allowed(456) is True
 
     def test_cleanup_removes_stale_entries(self):
-        """Test cleanup removes stale entries."""
+        """Test cleanup removes entries older than window."""
         limiter = RateLimiter(max_requests=5, window_seconds=1)
         limiter.CLEANUP_THRESHOLD = 1  # Force cleanup on 2nd user
 
+        # User 1 makes a request
         limiter.is_allowed(1)
-        limiter._requests[1] = [0.0]  # Stale entry
-        limiter.is_allowed(2)  # Triggers cleanup
+        assert 1 in limiter._requests
+        assert len(limiter._requests[1]) == 1
 
-        assert 1 not in limiter._requests or len(limiter._requests[1]) == 0
+        # Manually expire user 1's entry
+        limiter._requests[1] = [0.0]
+
+        # User 2's request triggers cleanup
+        limiter.is_allowed(2)
+
+        # Stale entry should be removed
+        assert 1 not in limiter._requests, "Stale user entry should be removed"
+        # User 2's entry should remain
+        assert 2 in limiter._requests
+        assert len(limiter._requests[2]) == 1
 
 
 class TestMessageSplitting:
@@ -205,10 +216,28 @@ class TestApprovalView:
 class TestNotifyCallback:
     """Tests for notify callback."""
 
-    def test_notify_callback_no_loop(self, bot):
-        """Test notify_callback handles no running loop."""
-        # Should not raise
+    @pytest.mark.asyncio
+    async def test_notify_callback_schedules_message(self, bot, config):
+        """Test notify_callback attempts to send message to admins."""
+        # Set up mock for bot's internal client
+        mock_user = MagicMock()
+        mock_user.send = AsyncMock()
+        bot._bot.fetch_user = AsyncMock(return_value=mock_user)
+
         bot.notify_callback("agent1", "Test message")
+        # Allow async task to run
+        await asyncio.sleep(0.01)
+
+        # Verify fetch_user was called for an admin
+        bot._bot.fetch_user.assert_called()
+        called_id = bot._bot.fetch_user.call_args[0][0]
+        assert called_id in config.discord_admin_ids
+
+        # Verify message was sent with correct content
+        mock_user.send.assert_called()
+        sent_message = mock_user.send.call_args[0][0]
+        assert "agent1" in sent_message
+        assert "Test message" in sent_message
 
 
 class TestApprovalCallback:
@@ -223,12 +252,17 @@ class TestApprovalCallback:
 
     @pytest.mark.asyncio
     async def test_approval_callback_with_options(self, bot):
-        """Test approval_callback with options creates future."""
+        """Test approval_callback with options stores options."""
         options = ["Option 1", "Option 2"]
         future = bot.approval_callback("test-approval", {"options": options})
+        # Allow async task to run
+        await asyncio.sleep(0.01)
+
         assert isinstance(future, asyncio.Future)
         assert "test-approval" in bot._pending_approvals
-        # Note: _pending_options is set in background task, not checked here
+        # Options should be stored for button creation
+        assert "test-approval" in bot._pending_options
+        assert bot._pending_options["test-approval"] == options
 
 
 class TestCancelApproval:
@@ -249,9 +283,17 @@ class TestCancelApproval:
 
     @pytest.mark.asyncio
     async def test_cancel_approval_handles_missing(self, bot):
-        """Test cancel_approval handles missing approval."""
-        # Should not raise
+        """Test cancel_approval handles missing approval gracefully."""
+        # Ensure approval doesn't exist
+        assert "nonexistent" not in bot._pending_approvals
+
+        # Should complete without modifying any state
         await bot.cancel_approval("nonexistent")
+
+        # No state changes should occur
+        assert "nonexistent" not in bot._pending_approvals
+        assert "nonexistent" not in bot._pending_options
+        assert "nonexistent" not in bot._pending_messages
 
 
 class TestConfigValidation:
@@ -379,7 +421,7 @@ class TestApproveButtonCallback:
     @pytest.mark.asyncio
     async def test_approve_button_expired(self, bot, mock_interaction):
         """Test approve button when approval has expired."""
-        from gru.discord_bot import ApproveButton, ApprovalView
+        from gru.discord_bot import ApprovalView, ApproveButton
 
         view = ApprovalView("test-approval", bot)
         button = ApproveButton(view)
@@ -394,7 +436,7 @@ class TestApproveButtonCallback:
     @pytest.mark.asyncio
     async def test_approve_button_success(self, bot, mock_interaction, orchestrator):
         """Test approve button success."""
-        from gru.discord_bot import ApproveButton, ApprovalView
+        from gru.discord_bot import ApprovalView, ApproveButton
 
         view = ApprovalView("test-approval", bot)
         button = ApproveButton(view)
@@ -417,7 +459,7 @@ class TestRejectButtonCallback:
     @pytest.mark.asyncio
     async def test_reject_button_expired(self, bot, mock_interaction):
         """Test reject button when approval has expired."""
-        from gru.discord_bot import RejectButton, ApprovalView
+        from gru.discord_bot import ApprovalView, RejectButton
 
         view = ApprovalView("test-approval", bot)
         button = RejectButton(view)
@@ -431,7 +473,7 @@ class TestRejectButtonCallback:
     @pytest.mark.asyncio
     async def test_reject_button_success(self, bot, mock_interaction, orchestrator):
         """Test reject button success."""
-        from gru.discord_bot import RejectButton, ApprovalView
+        from gru.discord_bot import ApprovalView, RejectButton
 
         view = ApprovalView("test-approval", bot)
         button = RejectButton(view)
@@ -453,7 +495,7 @@ class TestOptionButtonCallback:
     @pytest.mark.asyncio
     async def test_option_button_expired(self, bot, mock_interaction):
         """Test option button when approval has expired."""
-        from gru.discord_bot import OptionButton, ApprovalView
+        from gru.discord_bot import ApprovalView, OptionButton
 
         options = ["Option A", "Option B"]
         view = ApprovalView("test-approval", bot, options=options)
@@ -468,7 +510,7 @@ class TestOptionButtonCallback:
     @pytest.mark.asyncio
     async def test_option_button_success(self, bot, mock_interaction):
         """Test option button selection success."""
-        from gru.discord_bot import OptionButton, ApprovalView
+        from gru.discord_bot import ApprovalView, OptionButton
 
         options = ["Option A", "Option B"]
         view = ApprovalView("test-approval", bot, options=options)

@@ -8,12 +8,10 @@ import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from aiohttp import web
 from aiohttp.test_utils import AioHTTPTestCase
 
 from gru.config import Config
 from gru.webhook import WebhookServer
-
 
 # =============================================================================
 # Fixtures
@@ -161,7 +159,8 @@ class TestVercelWebhook:
         response = await webhook_server._handle_vercel(request)
         assert response.status == 401
         body_json = json.loads(response.body)
-        assert "Invalid signature" in body_json["error"]
+        # Exact match to kill mutant #19
+        assert body_json["error"] == "Invalid signature"
 
     @pytest.mark.asyncio
     async def test_missing_signature(self, webhook_server, config):
@@ -199,7 +198,8 @@ class TestVercelWebhook:
         response = await webhook_server_no_secret._handle_vercel(request)
         assert response.status == 400
         body_json = json.loads(response.body)
-        assert "Invalid JSON" in body_json["error"]
+        # Exact match to kill mutant #24
+        assert body_json["error"] == "Invalid JSON"
 
     @pytest.mark.asyncio
     async def test_deployment_succeeded_notifies_agent(self, webhook_server_no_secret, orchestrator):
@@ -341,6 +341,193 @@ class TestVercelWebhook:
         # Should not crash, just return ok
         assert response.status == 200
 
+    @pytest.mark.asyncio
+    async def test_missing_type_key(self, webhook_server_no_secret, orchestrator):
+        """Test payload without type key doesn't notify.
+
+        Kills mutant: event_type = payload.get("type", "") -> "XXXX"
+        """
+        # Payload without "type" key
+        payload = {
+            "payload": {
+                "deployment": {
+                    "meta": {"githubCommitRef": "gru-agent-test"},
+                    "url": "test.vercel.app",
+                    "state": "READY",
+                }
+            }
+        }
+        body = json.dumps(payload).encode()
+
+        request = MagicMock()
+        request.headers = {}
+        request.read = AsyncMock(return_value=body)
+
+        response = await webhook_server_no_secret._handle_vercel(request)
+        assert response.status == 200
+        # Should NOT notify because event_type is empty (not a known type)
+        orchestrator.notify.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_missing_branch_metadata(self, webhook_server_no_secret, orchestrator):
+        """Test payload without branch metadata doesn't notify.
+
+        Kills mutant: branch = ... .get("githubCommitRef", "") -> "XXXX"
+        """
+        payload = {
+            "type": "deployment.succeeded",
+            "payload": {
+                "deployment": {
+                    "meta": {},  # No githubCommitRef
+                    "url": "test.vercel.app",
+                    "state": "READY",
+                }
+            }
+        }
+        body = json.dumps(payload).encode()
+
+        request = MagicMock()
+        request.headers = {}
+        request.read = AsyncMock(return_value=body)
+
+        response = await webhook_server_no_secret._handle_vercel(request)
+        assert response.status == 200
+        # Should NOT notify because branch is empty (doesn't start with gru-agent-)
+        orchestrator.notify.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_url_https_prefix_exact_format(self, webhook_server_no_secret, orchestrator):
+        """Test that https:// prefix is added correctly without extra characters.
+
+        Kills mutant: preview_url = f"https://{preview_url}" -> "XXhttps://..."
+        """
+        payload = create_vercel_payload(
+            event_type="deployment.succeeded",
+            branch="gru-agent-format",
+            url="my-app.vercel.app",  # No protocol
+        )
+        body = json.dumps(payload).encode()
+
+        request = MagicMock()
+        request.headers = {}
+        request.read = AsyncMock(return_value=body)
+
+        await webhook_server_no_secret._handle_vercel(request)
+
+        call_args = orchestrator.notify.call_args
+        message = call_args[0][1]
+        # Verify exact format - no extra XX characters
+        assert "https://my-app.vercel.app" in message
+        assert "XXhttps" not in message
+        assert "vercel.appXX" not in message
+
+    @pytest.mark.asyncio
+    async def test_missing_preview_url_no_notification(self, webhook_server_no_secret, orchestrator):
+        """Test that missing URL prevents notification.
+
+        Kills mutant #38: preview_url default "" -> "XXXX"
+        """
+        payload = {
+            "type": "deployment.succeeded",
+            "payload": {
+                "deployment": {
+                    "meta": {"githubCommitRef": "gru-agent-nourl"},
+                    # No "url" key
+                    "state": "READY",
+                }
+            }
+        }
+        body = json.dumps(payload).encode()
+
+        request = MagicMock()
+        request.headers = {}
+        request.read = AsyncMock(return_value=body)
+
+        response = await webhook_server_no_secret._handle_vercel(request)
+        assert response.status == 200
+        # Should NOT notify because preview_url is empty/falsy
+        orchestrator.notify.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_deployment_error_default_message(self, webhook_server_no_secret, orchestrator):
+        """Test deployment error with missing errorMessage uses default.
+
+        Kills mutant #63: default "Unknown error" -> "XXUnknown errorXX"
+        """
+        payload = {
+            "type": "deployment.error",
+            "payload": {
+                "deployment": {
+                    "meta": {"githubCommitRef": "gru-agent-err"},
+                    "url": "test.vercel.app",
+                    "state": "ERROR",
+                    # No "errorMessage" key - should use default
+                }
+            }
+        }
+        body = json.dumps(payload).encode()
+
+        request = MagicMock()
+        request.headers = {}
+        request.read = AsyncMock(return_value=body)
+
+        response = await webhook_server_no_secret._handle_vercel(request)
+        assert response.status == 200
+
+        orchestrator.notify.assert_called_once()
+        call_args = orchestrator.notify.call_args
+        message = call_args[0][1]
+        # Verify exact default message format
+        assert "Unknown error" in message
+        assert "XXUnknown" not in message
+
+    @pytest.mark.asyncio
+    async def test_deployment_error_message_format(self, webhook_server_no_secret, orchestrator):
+        """Test error notification message format.
+
+        Kills mutant #65: "Preview deployment failed" -> "XXPreview..."
+        """
+        payload = create_vercel_payload(
+            event_type="deployment.error",
+            branch="gru-agent-errfmt",
+            error_message="Build timeout",
+        )
+        body = json.dumps(payload).encode()
+
+        request = MagicMock()
+        request.headers = {}
+        request.read = AsyncMock(return_value=body)
+
+        await webhook_server_no_secret._handle_vercel(request)
+
+        call_args = orchestrator.notify.call_args
+        message = call_args[0][1]
+        # Verify exact message prefix
+        assert message.startswith("Preview deployment failed:")
+        assert "XXPreview" not in message
+
+    @pytest.mark.asyncio
+    async def test_vercel_response_body_format(self, webhook_server_no_secret):
+        """Test vercel handler returns correct response body.
+
+        Kills mutants #66, #67: {"status": "ok"} mutations
+        """
+        payload = create_vercel_payload(
+            event_type="deployment.succeeded",
+            branch="main",  # Non-gru branch to avoid notification
+        )
+        body = json.dumps(payload).encode()
+
+        request = MagicMock()
+        request.headers = {}
+        request.read = AsyncMock(return_value=body)
+
+        response = await webhook_server_no_secret._handle_vercel(request)
+        assert response.status == 200
+        body_json = json.loads(response.body)
+        # Exact key and value match
+        assert body_json == {"status": "ok"}
+
 
 # =============================================================================
 # Server Lifecycle Tests
@@ -360,13 +547,15 @@ class TestServerLifecycle:
         mock_site = MagicMock()
         mock_site.start = AsyncMock()
 
-        with patch("gru.webhook.web.AppRunner", return_value=mock_runner):
-            with patch("gru.webhook.web.TCPSite", return_value=mock_site):
-                await server.start()
+        with (
+            patch("gru.webhook.web.AppRunner", return_value=mock_runner),
+            patch("gru.webhook.web.TCPSite", return_value=mock_site),
+        ):
+            await server.start()
 
-                mock_runner.setup.assert_called_once()
-                mock_site.start.assert_called_once()
-                assert server._runner is not None
+            mock_runner.setup.assert_called_once()
+            mock_site.start.assert_called_once()
+            assert server._runner is not None
 
     @pytest.mark.asyncio
     async def test_start_when_disabled(self, config_disabled, orchestrator):
