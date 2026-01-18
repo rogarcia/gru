@@ -3,6 +3,7 @@
 [![CI](https://github.com/zscole/gru/actions/workflows/ci.yml/badge.svg)](https://github.com/zscole/gru/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/zscole/gru)
 
 Self-hosted AI agent orchestration service controlled via Telegram, Discord, or Slack.
 
@@ -289,6 +290,30 @@ docker-compose up -d
 ```
 
 That's it. The bot will start automatically.
+
+### Option C: One-Click Cloud Deploy (Easiest)
+
+Don't want to run anything locally? Deploy to Railway with one click:
+
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/zscole/gru)
+
+**Steps:**
+1. Click the button above
+2. Create a Railway account (free)
+3. Fill in your environment variables:
+   - `ANTHROPIC_API_KEY` - your Anthropic API key
+   - `GRU_TELEGRAM_TOKEN` - your Telegram bot token (optional)
+   - `GRU_ADMIN_IDS` - your Telegram user ID (optional)
+   - `GRU_DISCORD_TOKEN` - your Discord bot token (optional)
+   - `GRU_DISCORD_ADMIN_IDS` - your Discord user ID (optional)
+   - `GRU_SLACK_BOT_TOKEN` - your Slack bot token (optional)
+   - `GRU_SLACK_APP_TOKEN` - your Slack app token (optional)
+   - `GRU_SLACK_ADMIN_IDS` - your Slack user ID (optional)
+4. Click Deploy
+
+Railway handles everything else. Your bot will be running in about 2 minutes.
+
+**Cost:** Railway offers a free trial. After that, Gru typically costs $5-10/month depending on usage.
 
 ---
 
