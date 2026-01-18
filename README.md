@@ -4,48 +4,55 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
-AI agents you can control from your phone. Spawn Claude-powered coding assistants via Telegram, Discord, or Slack.
+AI agents you can control from your phone. Message a bot, get a coding assistant.
 
-## Quick Start (2 minutes)
+## Quick Start
 
-**Easiest:** Click the button, add your API keys, done.
+**Step 1:** Get your API keys (5 min)
+
+| Key | Where to get it |
+|-----|-----------------|
+| Anthropic API Key | [console.anthropic.com](https://console.anthropic.com) → API Keys → Create Key |
+| Telegram Bot Token | Open Telegram → message [@BotFather](https://t.me/BotFather) → send `/newbot` → copy the token |
+| Your Telegram User ID | Message [@userinfobot](https://t.me/userinfobot) → copy the number it sends back |
+
+**Step 2:** Deploy (1 min)
 
 [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/zscole/gru)
 
-You'll need:
-- An [Anthropic API key](https://console.anthropic.com)
-- A bot token ([Telegram](#telegram-setup), [Discord](#discord-setup), or [Slack](#slack-setup))
-- Your user ID for the platform you're using
+Click the button above, then paste your 3 keys:
+- `ANTHROPIC_API_KEY` → your Anthropic key
+- `GRU_TELEGRAM_TOKEN` → your bot token from BotFather
+- `GRU_ADMIN_IDS` → your user ID from userinfobot
 
-That's it. Your bot will be live in about 2 minutes.
+**Step 3:** Start chatting
 
-**Prefer to self-host?** See [Installation](#installation) below.
+Open Telegram, find your bot, and send:
+```
+/gru spawn write a hello world script in python
+```
+
+Done. You now have AI agents on your phone.
+
+---
+
+**Want Discord or Slack instead?** See [Discord Setup](#discord-setup) or [Slack Setup](#slack-setup).
+
+**Prefer to self-host?** See [Installation](#installation-self-hosted).
 
 ---
 
 ## What is Gru?
 
-Gru lets you spawn, manage, and interact with Claude-powered AI agents from your phone. Agents can execute bash commands, read/write files, and work autonomously on tasks. Think of it as having a coding assistant you can message from anywhere.
+Gru lets you spawn and control Claude-powered AI agents from your phone. Agents can run commands, read/write files, and work on coding tasks autonomously. Think of it as a coding assistant you can message from anywhere.
 
 ---
 
-## Prerequisites
+## Telegram Setup (Recommended)
 
-Before deploying, you'll need:
-
-1. **An Anthropic API Key** - [Get one here](https://console.anthropic.com)
-2. **A bot token** for Telegram, Discord, and/or Slack (setup guides below)
-3. **Your user ID** for the platform(s) you're using
-
-You can use one platform or all three. Follow the setup guide for each platform you want to use.
-
----
-
-## Telegram Setup
+Telegram is the easiest way to get started. You already did this if you followed Quick Start above.
 
 ### Create a Telegram Bot
-
-You need to create a bot on Telegram. This is free and takes 2 minutes.
 
 1. Open Telegram on your phone or desktop
 2. Search for **@BotFather** (the official Telegram bot for creating bots)
