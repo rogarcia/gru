@@ -60,3 +60,4 @@ mcp_servers.json
 # OS
 .DS_Store
 Thumbs.db
+.claude/
