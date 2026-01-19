@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import os
 import signal
 import subprocess
 import sys
+import urllib.request
 from pathlib import Path
 
 from gru.config import Config
@@ -23,12 +25,46 @@ logger = logging.getLogger(__name__)
 
 
 def setup_git_credentials() -> None:
-    """Configure git to use GRU_GITHUB_TOKEN for authentication."""
+    """Configure git to use GRU_GITHUB_TOKEN for authentication and identity."""
     token = os.getenv("GRU_GITHUB_TOKEN")
     if not token:
         return
 
     try:
+        # Fetch GitHub user info from API
+        req = urllib.request.Request(
+            "https://api.github.com/user",
+            headers={
+                "Authorization": f"token {token}",
+                "Accept": "application/vnd.github.v3+json",
+                "User-Agent": "Gru",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            user_data = json.loads(resp.read().decode())
+
+        username = user_data.get("login", "")
+        name = user_data.get("name") or username
+        email = user_data.get("email")
+
+        # If email is private, use GitHub noreply email
+        if not email:
+            user_id = user_data.get("id", "")
+            email = f"{user_id}+{username}@users.noreply.github.com"
+
+        # Configure git identity
+        subprocess.run(
+            ["git", "config", "--global", "user.name", name],
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "config", "--global", "user.email", email],
+            check=True,
+            capture_output=True,
+        )
+        logger.info("Git identity configured: %s <%s>", name, email)
+
         # Configure git credential helper to use the token
         subprocess.run(
             ["git", "config", "--global", "credential.helper", "store"],
